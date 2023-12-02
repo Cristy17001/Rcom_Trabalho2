@@ -1,0 +1,2 @@
+#define BUFFSIZE 1000
+#define FTP_PORT 21
