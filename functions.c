@@ -1,5 +1,11 @@
 #include "functions.h"
 
+
+bool isConnectionSuccessful(int sockfd) {
+    // Check if the socket file descriptor is valid
+    return (sockfd >= 0);
+}
+
 int separateFileFromPath(const char *src, char **path, char **file) {
     const char *pattern = "^(.*/)([^/]+)$";
 
@@ -122,4 +128,83 @@ int ftpConnect(char* server_ip) {
     }
 
     return sockfd;
+}
+
+int ftpLogin(int sockfd, const char *username, const char *password, FILE *readSocket) {
+    char command[256];
+
+    // Send USER command
+    sprintf(command, "user %s\n", username);
+    if (sendCommand(sockfd, command) != 0) {
+        return -1;  // Error in sending command
+    }
+    readReply(readSocket);
+
+    // Send PASS command
+    sprintf(command, "pass %s\n", password);
+    if (sendCommand(sockfd, command) != 0) {
+        return -1;  // Error in sending command
+    }
+    readReply(readSocket);
+
+    return 0;  // Login successful
+}
+
+int ftpChangeDirectory(int sockfd, const char *directory, FILE *readSocket) {
+    char command[256];
+
+    // Send CWD command
+    sprintf(command, "cwd %s\n", directory);
+    if (sendCommand(sockfd, command) != 0) {
+        return -1;  // Error in sending command
+    }
+    readReply(readSocket);
+
+    return 0;  // Directory change successful
+}
+
+int ftpSetPassiveMode(int sockfd, int *port, char *ip, FILE *readSocket) {
+    char command[256];
+
+    // Send PASV command
+    sprintf(command, "pasv \n");
+    if (sendCommand(sockfd, command) != 0) {
+        return -1;  // Error in sending command
+    }
+
+    // Read IP and port from the server's response
+    readIpPort(ip, port, readSocket);
+    
+    // Open connection for passive mode
+    if (startConnection(ip, *port, &sockfd) != 0) {
+        printf("Error starting passive connection\n");
+        return -1;
+    }
+
+    return 0;  // Passive mode setup successful
+}
+
+int startConnection(const char *ip, int port, int *sockfd) {
+    struct sockaddr_in server_addr;
+
+    // Initialize server address structure
+    bzero((char *) &server_addr, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = inet_addr(ip);
+    server_addr.sin_port = htons(port);
+
+    // Open a new TCP socket for passive connection
+    if ((*sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        perror("socket()");
+        return -1;
+    }
+
+    // Connect to the server
+    if (connect(*sockfd, (struct sockaddr *) &server_addr, sizeof(server_addr)) < 0) {
+        perror("connect()");
+        close(*sockfd);  // Close the socket in case of failure
+        return -1;
+    }
+
+    return 0;  // Connection successful
 }
