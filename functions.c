@@ -41,6 +41,22 @@ int separateFileFromPath(const char *src, char **path, char **file) {
     return 0;
 }
 
+int sendCommand(int sockfd, char * command){
+    int bytesSent;
+    bytesSent = write(sockfd, command, strlen(command));
+
+    if(bytesSent == 0){
+        printf("sendCommand: connection closed\n");
+        return 1;
+    }
+    if(bytesSent == -1){
+        printf("error sending command\n");
+        return 1;
+    }
+    printf("%s\n",command);
+    return 0;
+}
+
 int parseFTP(const char *url, FTP_args* ftp_args) {
     // The regular expression pattern
     const char *pattern = "ftp://([a-zA-Z0-9_-]{3,16}):([a-zA-Z0-9@!$]{1,})@([^:/]+)(/.+)?";
