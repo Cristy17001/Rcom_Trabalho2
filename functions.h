@@ -19,3 +19,8 @@ int separateFileFromPath(const char *src, char **path, char **file);
 int parseFTP(const char *url, FTP_args* ftp_args);
 int getHostIp(char* host, char* ip);
 int ftpConnect(char* server_ip);
+bool isConnectionSuccessful(int sockfd);
+int ftpLogin(int sockfd, const char *username, const char *password, FILE *readSocket);
+int ftpChangeDirectory(int sockfd, const char *directory, FILE *readSocket);
+int ftpSetPassiveMode(int sockfd, int *port, char *ip, FILE *readSocket);
+int startConnection(const char *ip, int port, int *sockfd);
