@@ -6,6 +6,36 @@ bool isConnectionSuccessful(int sockfd) {
     return (sockfd >= 0);
 }
 
+int readReply(FILE * readSockect){
+    long code;
+    char * aux;
+    
+    char *buf;
+    size_t bufsize = 256;
+    size_t characters;
+
+
+    while(1){
+        buf = (char *)malloc(bufsize * sizeof(char));
+        characters = getline(&buf,&bufsize,readSockect);
+        printf("> %s", buf);
+        
+        if((characters > 0) && (buf[3] == ' ')){
+            code = strtol(buf, &aux, 10); 
+            
+            if(code >= 500 && code <= 559){
+                printf("Error\n");
+                exit(1);
+            }
+            //printf("Code: %li\n", code);
+            break;
+        }
+        free(buf);
+    }  
+
+    return 0;
+}
+
 int separateFileFromPath(const char *src, char **path, char **file) {
     const char *pattern = "^(.*/)([^/]+)$";
 
