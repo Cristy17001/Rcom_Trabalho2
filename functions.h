@@ -40,3 +40,5 @@ int setPassiveConnection(int socket, char* receiveIP, int* receivePort);
 int regexPassiveInfo(char* buffer, PassiveInfo* info);
 int readPassiveInfo(int socket, char* ip, int* port);
 int setRETR(int socket, FTP_args ftp_args);
+int saveFile(int socket, char* filename);
+int closeConnection(int socket);

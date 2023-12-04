@@ -68,17 +68,14 @@ int main(int argc, char *argv[]) {
     }
 
     printf("The IP to connect to is %s\n", receiveIP);
-    printf("The IP to connect to is %d\n", receivePort);
+    printf("The PORT to connect to is %d\n", receivePort);
 
     // Open another connection to receive the data
     int sockfdReceive = 0;
-    if ((sockfdReceive = ftpConnect(ip, FTP_PORT)) < 0) {
+    if ((sockfdReceive = ftpConnect(receiveIP, receivePort)) < 0) {
         printf("Error establishing connection via FTP!");
         return -1;
     }
-
-
-
 
     // Send the retr to the ftp server
     if (setRETR(sockfd, ftp_args) != 0) {
@@ -86,6 +83,15 @@ int main(int argc, char *argv[]) {
         return -1;
     }   
 
+    if (saveFile(sockfdReceive, ftp_args.file_name) != 0) {
+        printf("Error saving the file!\n");
+        return -1;
+    }
+
+    if (closeConnection(sockfd) != 0) {
+        printf("Error closing connection!\n");
+        return -1;
+    }
 
     return 0;
 }

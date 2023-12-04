@@ -187,43 +187,37 @@ int sendToSocket(int socket, char* command, char* command_argument) {
 
 int login(int socket, FTP_args ftp_args) {
     // Send the Username to the ftp server
-    printf("Sending username to the ftp server!\n");
-    if (sendToSocket(socket, "USER", ftp_args.username) != 0) {
-        printf("Something went wrong sending the username to the server!\n");
-        return -1;
-    }
-
     char code[4]; 
-    // Wait for the username confirm code 331 to enter the password
-    if (readCodeFromSocket(socket, code) != 0) {
-        printf("Something went wrong reading from the socket!\n");
-        return -1;
-    }
-    
-    if (!(code[0] == '3' && code[1] == '3' && code[2] == '1')) {
-        printf("Received wrong code for username confirmation. Received: %s, expected 331", code);
-        return -1;
-    }
 
+    while (!(code[0] == '3' && code[1] == '3' && code[2] == '1')) {
+        printf("Sending username to the ftp server!\n");
+        if (sendToSocket(socket, "USER", ftp_args.username) != 0) {
+            printf("Something went wrong sending the username to the server!\n");
+            return -1;
+        }
+
+        // Wait for the username confirm code 331 to enter the password
+        if (readCodeFromSocket(socket, code) != 0) {
+            printf("Something went wrong reading from the socket!\n");
+            return -1;
+        }
+    }
     printf("Username correctly sent to the ftp server!\n");
-
-    printf("Sending password to the ftp server!\n");
+    
 
     // Send the Password to the ftp server
-    if (sendToSocket(socket, "PASS", ftp_args.password) != 0) {
-        printf("Something went wrong sending the password to the server!\n");
-        return -1;
-    }
+    while (!(code[0] == '2' && code[1] == '3' && code[2] == '0')) {
+        printf("Sending password to the ftp server!\n");
+        if (sendToSocket(socket, "PASS", ftp_args.password) != 0) {
+            printf("Something went wrong sending the password to the server!\n");
+            return -1;
+        }
 
-    // Wait for the password confirm code 230 to enter the password
-    if (readCodeFromSocket(socket, code) != 0) {
-        printf("Something went wrong reading from the socket!\n");
-        return -1;
-    }
-
-    if (!(code[0] == '2' && code[1] == '3' && code[2] == '0')) {
-        printf("Received wrong code for password/login confirmation. Received: %s, expected 230\n", code);
-        return -1;
+        // Wait for the password confirm code 230 to enter the password
+        if (readCodeFromSocket(socket, code) != 0) {
+            printf("Something went wrong reading from the socket!\n");
+            return -1;
+        }
     }
 
     printf("Password correctly sent to the ftp server!\n");
@@ -313,17 +307,17 @@ int setPassiveConnection(int socket, char* receiveIP, int* receivePort) {
         return -1;
     }
 
-    //char ip[BUFFSIZE];
-    //int port = 0;
+    char ip[BUFFSIZE];
+    int port = 0;
 
-    if (readPassiveInfo(socket, receiveIP, receivePort) != 0) {
+    if (readPassiveInfo(socket, ip, &port) != 0) {
         printf("Failed to read the passive information!\n");
         return -1;
     }
 
-    //printf("The IP to connect to is %s\n", ip);
-    //printf("The PORT to connect to is %d\n", port);
 
+    strcpy(receiveIP, ip);
+    *receivePort = port;
 
     return 0;
 }
@@ -335,5 +329,52 @@ int setRETR(int socket, FTP_args ftp_args) {
         printf("Error sending the retr command to the socket!\n");
         return -1;
     }
+    return 0;
+}
+
+int saveFile(int socket, char* filename) {
+    FILE *fp = fopen(filename, "w");
+    if (fp == NULL){
+        printf("Error opening or creating file\n");
+        return -1;
+    } 
+    int bytes; 
+    char buffer[BUFFSIZE*2];
+
+    do {
+        bytes = read(socket, buffer, sizeof(buffer));
+
+        printf("Received: %s\n", buffer);
+        if (bytes < 0) {
+            printf("Error reading from data socket\n");
+            return -1;
+        }
+
+        if (bytes > 0) {
+            if (fwrite(buffer, bytes, 1, fp) < 0) {
+                printf("Error writing data to file\n");
+                return -1;
+            }
+        }
+    } while (bytes > 0);
+
+    fclose(fp);
+    close(socket);
+    return 0;
+}
+
+int closeConnection(int socket) {
+    char code[4];
+    while (code[0] != '2') {
+        if (sendToSocket(socket, "QUIT", "") != 0) {
+            printf("Error ocurred when finishing the connection!\n");
+            return -1;
+        }
+        if (readCodeFromSocket(socket, code) != 0) {
+            printf("Something went wrong reading from the socket!\n");
+            return -1;
+        }
+    }
+    printf("Quitting from the ftp server!\n");
     return 0;
 }
