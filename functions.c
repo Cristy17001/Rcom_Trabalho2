@@ -343,7 +343,9 @@ int saveFile(int socket, char* filename) {
 
     do {
         bytes = read(socket, buffer, sizeof(buffer));
-
+        if (bytes == 0) {
+            break;
+        }
         printf("Received: %s\n", buffer);
         if (bytes < 0) {
             printf("Error reading from data socket\n");
