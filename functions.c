@@ -281,8 +281,8 @@ int regexPassiveInfo(char* buffer, PassiveInfo* info) {
 
 int readPassiveInfo(int socket, char* ip, int* port) {
     FILE *fp = fdopen(socket, "r");
-    char* buffer;
-    size_t bytes;
+    char* buffer = NULL;
+    size_t bytes = 0;
     PassiveInfo info = {NULL, NULL, NULL, NULL, NULL, NULL};
 
     while (TRUE)
